@@ -268,7 +268,9 @@ mem_init_mp(void)
 	//     Permissions: kernel RW, user NONE
 	//
 	// LAB 4: Your code here:
-
+	for (int i = 0; i < NCPU; ++i) {
+		boot_map_region(kern_pgdir, KSTACKTOP - i * (KSTKSIZE + KSTKGAP) - KSTKSIZE, KSTKSIZE, PADDR(percpu_kstacks[i]), PTE_W | PTE_P);
+	}
 }
 
 // --------------------------------------------------------------
@@ -289,6 +291,7 @@ page_init(void)
 	// LAB 4:
 	// Change your code to mark the physical page at MPENTRY_PADDR
 	// as in use
+	struct PageInfo* mp_entry_page = pa2page(MPENTRY_PADDR);
 
 	// The example code here marks all physical pages as free.
 	// However this is not truly the case.  What memory is free?
@@ -316,6 +319,9 @@ page_init(void)
 			pages[i].pp_ref = 1;
 		} else if (i >= npages_basemem && i < npages_basemem + num_alloc + io_hole) {
 			pages[i].pp_ref = 1;
+		} else if ((&pages[i]) == mp_entry_page) {
+			pages[i].pp_ref = 1;
+			continue;
 		} else {
 			pages[i].pp_ref = 0;
 			pages[i].pp_link = page_free_list;
@@ -599,7 +605,16 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+	// panic("mmio_map_region not implemented");
+	physaddr_t end_pa = ROUNDUP(pa + size, PGSIZE);
+	physaddr_t start_pa = ROUNDDOWN(pa, PGSIZE);
+	if (base + (int)(end_pa - start_pa) >= MMIOLIM) {
+		panic("mmio_map_region: not enough memory\n");
+	}
+	boot_map_region(kern_pgdir, base, (size_t)(end_pa - start_pa), start_pa, PTE_PCD | PTE_PWT | PTE_W);
+	void* ret = (void*)base;
+	base += (int)(end_pa - start_pa);
+	return ret;
 }
 
 static uintptr_t user_mem_check_addr;
