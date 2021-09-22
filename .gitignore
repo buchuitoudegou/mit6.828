@@ -16,3 +16,6 @@
 /sol?/
 /myapi.key
 /.suf
+.vscode/
+.DS_Store
+*/.DS_Store
