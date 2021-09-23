@@ -9,3 +9,8 @@ install 32-bit library: please note that, if there are multiple versions of `gcc
 ```
 sudo apt-get install gcc-[VERSION]-multilib
 ```
+
+## QEMU Dependencies
+```
+sudo apt-get install libsdl1.2-dev libtool-bin libglib2.0-dev libz-dev libpixman-1-dev
+```
