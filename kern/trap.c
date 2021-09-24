@@ -9,8 +9,56 @@
 #include <kern/env.h>
 #include <kern/syscall.h>
 
-static struct Taskstate ts;
+void DivideError();
+void Debug();
+void NMI();
+void Breakpoint();
+void Overflow();
+void BoundRangeExceed();
+void InvalidOpcode();
+void DeviceNotAvailable();
+void DoubleFault();
+// void CopSegOverrun();
+void InvalidTss();
+void SegNotPresent();
+void StackFault();
+void GeneralProtect();
+void PageFault();
+// void UnknownTrap();
+void FPUFloatErr();
+void AlignCheck();
+void MachineCheck();
+void SIMDFloatException();
 
+static struct Taskstate ts;
+typedef void (*IdtHandler)();
+IdtHandler idt_handlers[] = {
+	DivideError,
+	Debug,
+	NMI,
+	Breakpoint,
+	Overflow,
+	BoundRangeExceed,
+	InvalidOpcode,
+	DeviceNotAvailable,
+	DoubleFault,
+	0,
+	InvalidTss,
+	SegNotPresent,
+	StackFault,
+	GeneralProtect,
+	PageFault,
+	0,
+	FPUFloatErr,
+	AlignCheck,
+	MachineCheck,
+	SIMDFloatException
+};
+int dpls[] = {
+	0, 3, 0, 3, 0, 0, 0, 0,
+	0, -1, 0, 0, 0, 0, 0, -1,
+	0, 0, 0, 0
+};
 /* For debugging, so print_trapframe can distinguish between printing
  * a saved trapframe and printing the current trapframe and print some
  * additional information in the latter case.
@@ -65,7 +113,14 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
-
+	for (int i = 0; i < 20; ++i) {
+		if (idt_handlers[i] == 0) {
+			continue;
+		}
+		struct Gatedesc trap_gate;
+		SETGATE(trap_gate, 1, GD_KT, idt_handlers[i], dpls[i]);
+		idt[i] = trap_gate;
+	}
 	// Per-CPU setup 
 	trap_init_percpu();
 }
