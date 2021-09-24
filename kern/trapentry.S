@@ -46,10 +46,39 @@
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
-
+TRAPHANDLER_NOEC(DivideError, T_DIVIDE)
+TRAPHANDLER_NOEC(Debug, T_DEBUG)
+TRAPHANDLER_NOEC(NMI, T_NMI)
+TRAPHANDLER_NOEC(Breakpoint, T_BRKPT)
+TRAPHANDLER_NOEC(Overflow, T_OFLOW)
+TRAPHANDLER_NOEC(BoundRangeExceed, T_BOUND)
+TRAPHANDLER_NOEC(InvalidOpcode, T_ILLOP)
+TRAPHANDLER_NOEC(DeviceNotAvailable, T_DEVICE)
+TRAPHANDLER(DoubleFault, T_DBLFLT)
+/*TRAPHANDLER_NOEC(CopSegOverrun, T_TSS)*/
+TRAPHANDLER(InvalidTss, T_TSS)
+TRAPHANDLER(SegNotPresent, T_SEGNP)
+TRAPHANDLER(StackFault, T_STACK)
+TRAPHANDLER(GeneralProtect, T_GPFLT)
+TRAPHANDLER(PageFault, T_PGFLT)
+/*TRAPHANDLER_NOEC(UnknownTrap, T_RES)*/
+TRAPHANDLER_NOEC(FPUFloatErr, T_FPERR)
+TRAPHANDLER_NOEC(AlignCheck, T_ALIGN)
+TRAPHANDLER_NOEC(MachineCheck, T_MCHK)
+TRAPHANDLER_NOEC(SIMDFloatException, T_SIMDERR)
 
 
 /*
  * Lab 3: Your code here for _alltraps
  */
-
+_alltraps:
+	pushw $0 /*padding*/
+	pushw %ds /*ds register*/
+	pushw $0 /*padding*/
+	pushw %es /*es register*/
+	pushal /*save all the register*/
+	movw $GD_KD, %ax
+	movw %ax, %es
+	movw %ax, %ds
+	pushl %esp /* the pointer to trapframe */
+	call trap
