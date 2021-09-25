@@ -44,7 +44,7 @@ Allocate spaces for the kernel data structure `envs` array to store the processe
 
 ### Trap Procedure
 1. The interrupt happens at some time.
-2. The stack is automatically changed by the processor. The stack space and the data segment is specified in the `GD_TSS0` descriptor. The priviledge level is changed to 0.
+2. The stack is automatically changed by the processor. The stack space and the data segment is specified in the `GD_TSS0` descriptor. The priviledge level is changed to 0. The `ltr` instruction loads the selector of this descriptor into the `Task Register`, which controls the stack replacement before handling the exception.
 3. The processor automatically pushes the `%ss`, `%esp`, `eflags`, `%cs`, and `%eip` to the current stack. The `error code` is optionally pushed.
 4. Invoke the interrupt handler set in the `IDT` according to the trap number.
 5. All the interrupt handler would execute the  `alltraps` procedure first to push the trap frame into the stack, including the `ds`, `es`, `esp` and all the general data registers. Also, the `ds` and `es` segment register should point to kernel data segment.
