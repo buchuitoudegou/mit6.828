@@ -588,7 +588,29 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
-
+	char* cur = (char*)va;
+	char* end_addr = cur + len;
+	end_addr = ROUNDUP(end_addr, PGSIZE);
+	int page_num = (end_addr - cur) / PGSIZE;
+	if ((end_addr - cur) % PGSIZE != 0) {
+		page_num ++;
+	}
+	for (int i = 0; i < page_num; ++i, cur += PGSIZE) {
+		pte_t* pgt_entry = 0;
+		page_lookup(env->env_pgdir, cur, &pgt_entry);
+		if ((uint32_t)cur >= ULIM || !pgt_entry || !(*pgt_entry & perm)) {
+			// page not exists or violates the permission
+			if (i == 0) {
+				// the first page
+				user_mem_check_addr = (uintptr_t)cur;
+			} else {
+				// otherwise
+				// the beginning of the page
+				user_mem_check_addr = ROUNDDOWN((uintptr_t)cur, PGSIZE);
+			}
+			return -E_FAULT;
+		}
+	}
 	return 0;
 }
 
