@@ -29,6 +29,7 @@ void FPUFloatErr();
 void AlignCheck();
 void MachineCheck();
 void SIMDFloatException();
+void SysCall();
 
 static struct Taskstate ts;
 typedef void (*IdtHandler)();
@@ -121,6 +122,9 @@ trap_init(void)
 		SETGATE(trap_gate, 1, GD_KT, idt_handlers[i], dpls[i]);
 		idt[i] = trap_gate;
 	}
+	struct Gatedesc trap_gate;
+	SETGATE(trap_gate, 1, GD_KT, SysCall, 3);
+	idt[T_SYSCALL] = trap_gate;
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -199,7 +203,24 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+	if (tf->tf_trapno == T_PGFLT) {
+		page_fault_handler(tf);
+		return;
+	} else if (tf->tf_trapno == T_BRKPT) {
+		monitor(tf);
+		return;
+	} else if (tf->tf_trapno == T_SYSCALL) {
+		uint32_t ret = syscall(
+			tf->tf_regs.reg_eax, // syscall num
+			tf->tf_regs.reg_edx, // arg1
+			tf->tf_regs.reg_ecx, // arg2
+			tf->tf_regs.reg_ebx, // arg3
+			tf->tf_regs.reg_edi, // arg4
+			tf->tf_regs.reg_esi // arg5
+		);
+		tf->tf_regs.reg_eax = ret; // returned value will be popped out to the register
+		return;
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -260,7 +281,10 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+	int level = tf->tf_eflags & FL_IOPL_MASK;
+	if (level == FL_IOPL_0) {
+		panic("kernel page fault!\n");
+	}
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 

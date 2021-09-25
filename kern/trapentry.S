@@ -66,7 +66,7 @@ TRAPHANDLER_NOEC(FPUFloatErr, T_FPERR)
 TRAPHANDLER_NOEC(AlignCheck, T_ALIGN)
 TRAPHANDLER_NOEC(MachineCheck, T_MCHK)
 TRAPHANDLER_NOEC(SIMDFloatException, T_SIMDERR)
-
+TRAPHANDLER_NOEC(SysCall, T_SYSCALL)
 
 /*
  * Lab 3: Your code here for _alltraps
