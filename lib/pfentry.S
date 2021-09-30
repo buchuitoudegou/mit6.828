@@ -74,6 +74,7 @@ _pgfault_upcall:
 	movl 0x28(%esp),%edx // save the original esp to edx
 	subl $4,%edx // allocate an extra stack frame to save eip
 	movl %eax,(%edx) // save the eip to the original stack
+	movl %edx,0x28(%esp) // update the original esp
 	popal // restore the general registers
 	// Restore eflags from the stack.  After you do this, you can
 	// no longer use arithmetic operations or anything else that
@@ -84,7 +85,6 @@ _pgfault_upcall:
 	// Switch back to the adjusted trap-time stack.
 	// LAB 4: Your code here.
 	popl %esp // restore the original esp
-	subl $4,%esp // esp point to the frame that saves eip register
 	// Return to re-execute the instruction that faulted.
 	// LAB 4: Your code here.
 	ret // pop the eip and return
