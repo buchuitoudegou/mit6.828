@@ -344,7 +344,47 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+	// panic("sys_ipc_try_send not implemented");
+	int r;
+	struct Env* op_env;
+	if ((r = envid2env(envid, &op_env, 0)) < 0) {
+		return -E_BAD_ENV;
+	}
+	if (op_env->env_status != ENV_NOT_RUNNABLE || !op_env->env_ipc_recving) {
+		// non-blocking for receiving messages
+		return -E_IPC_NOT_RECV;
+	}
+	if ((uintptr_t)srcva < UTOP && op_env->env_ipc_dstva) {
+		if ((uintptr_t)srcva % PGSIZE != 0) {
+			// page not aligned
+			return -E_INVAL;
+		}
+		if ((r = check_perm(perm)) < 0) {
+			return r;
+		}
+		pte_t* pgt_entry;
+		struct PageInfo* page = page_lookup(curenv->env_pgdir, srcva, &pgt_entry);
+		if (!page) {
+			// page not exists
+			return -E_INVAL;
+		}
+		if ((perm & PTE_W) && !(*pgt_entry & PTE_W)) {
+			// src: readonly; dst: writable
+			return -E_INVAL;
+		}
+		op_env->env_ipc_perm = perm;
+		if ((r = page_insert(op_env->env_pgdir, page, op_env->env_ipc_dstva, perm)) < 0) {
+			return r;
+		}
+	} else {
+		op_env->env_ipc_perm = 0;
+	}
+	op_env->env_ipc_recving = 0;
+	op_env->env_ipc_from = curenv->env_id;
+	op_env->env_ipc_value = value;
+	op_env->env_status = ENV_RUNNABLE;
+	op_env->env_tf.tf_regs.reg_eax = 0; // returning 0
+	return 0;
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -362,7 +402,15 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
+	// panic("sys_ipc_recv not implemented");
+	if ((uintptr_t)dstva < UTOP) {
+		curenv->env_ipc_dstva = dstva;
+	} else {
+		return -E_INVAL;
+	}
+	curenv->env_ipc_recving = 1; // receiving data
+	curenv->env_status = ENV_NOT_RUNNABLE; // blocking
+	sched_yield(); // no return
 	return 0;
 }
 
@@ -410,6 +458,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		}
 		case SYS_env_set_pgfault_upcall: {
 			return sys_env_set_pgfault_upcall((envid_t)a1, (void*)a2);
+		}
+		case SYS_ipc_recv: {
+			return sys_ipc_recv((void*)a1);
+		}
+		case SYS_ipc_try_send: {
+			return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, (void*)a3, (unsigned int)a4);
 		}
 		case NSYSCALLS:
 		default:

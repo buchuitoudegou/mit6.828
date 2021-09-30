@@ -163,9 +163,6 @@ trap_init(void)
 		}
 		struct Gatedesc trap_gate;
 		int istrap = 0;
-		if (i == T_BRKPT) {
-			istrap = 1;
-		}
 		SETGATE(trap_gate, istrap, GD_KT, idt_handlers[i], dpls[i]); // disable interrupt
 		idt[i] = trap_gate;
 	}
