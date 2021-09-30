@@ -36,6 +36,23 @@ void MachineCheck();
 void SIMDFloatException();
 void SysCall();
 
+void IRQHandler0();
+void IRQHandler1();
+void IRQHandler2();
+void IRQHandler3();
+void IRQHandler4();
+void IRQHandler5();
+void IRQHandler6();
+void IRQHandler7();
+void IRQHandler8();
+void IRQHandler9();
+void IRQHandler10();
+void IRQHandler11();
+void IRQHandler12();
+void IRQHandler13();
+void IRQHandler14();
+void IRQHandler15();
+
 static struct Taskstate ts;
 typedef void (*IdtHandler)();
 IdtHandler idt_handlers[] = {
@@ -64,6 +81,25 @@ int dpls[] = {
 	0, 3, 0, 3, 0, 0, 0, 0,
 	0, -1, 0, 0, 0, 0, 0, -1,
 	0, 0, 0, 0
+};
+
+IdtHandler irq_handlers[] = {
+	IRQHandler0,
+	IRQHandler1,
+	IRQHandler2,
+	IRQHandler3,
+	IRQHandler4,
+	IRQHandler5,
+	IRQHandler6,
+	IRQHandler7,
+	IRQHandler8,
+	IRQHandler9,
+	IRQHandler10,
+	IRQHandler11,
+	IRQHandler12,
+	IRQHandler13,
+	IRQHandler14,
+	IRQHandler15
 };
 /* For debugging, so print_trapframe can distinguish between printing
  * a saved trapframe and printing the current trapframe and print some
@@ -126,12 +162,22 @@ trap_init(void)
 			continue;
 		}
 		struct Gatedesc trap_gate;
-		SETGATE(trap_gate, 1, GD_KT, idt_handlers[i], dpls[i]);
+		int istrap = 0;
+		if (i == T_BRKPT) {
+			istrap = 1;
+		}
+		SETGATE(trap_gate, istrap, GD_KT, idt_handlers[i], dpls[i]); // disable interrupt
 		idt[i] = trap_gate;
 	}
 	struct Gatedesc trap_gate;
-	SETGATE(trap_gate, 1, GD_KT, SysCall, 3);
+	SETGATE(trap_gate, 0, GD_KT, SysCall, 3); // disable interrupt
 	idt[T_SYSCALL] = trap_gate;
+	// init irq
+	for (int i = 0; i < 16; ++i) {
+		struct Gatedesc itr_gate;
+		SETGATE(itr_gate, 0, GD_KT, irq_handlers[i], 0);
+		idt[IRQ_OFFSET + i] = itr_gate;
+	}
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -277,7 +323,10 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
-
+	if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+		lapic_eoi();
+		sched_yield(); // never return
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
