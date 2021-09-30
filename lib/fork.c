@@ -110,6 +110,7 @@ fork(void)
 	set_pgfault_handler(pgfault);
 	envid_t pid = sys_exofork();
 	if (pid == 0) {
+		thisenv = &envs[ENVX(sys_getenvid())]; // reset the thisenv
 		return 0;
 	}
 	if (pid < 0) {
