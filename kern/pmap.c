@@ -84,6 +84,8 @@ static void check_page_installed_pgdir(void);
 // If we're out of memory, boot_alloc should panic.
 // This function may ONLY be used during initialization,
 // before the page_free_list list has been set up.
+// Note that when this function is called, we are still using entry_pgdir,
+// which only maps the first 4MB of physical memory.
 static void *
 boot_alloc(uint32_t n)
 {
@@ -230,6 +232,9 @@ mem_init(void)
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
 	boot_map_region(kern_pgdir, KERNBASE,  0xffffffff - KERNBASE, 0, PTE_P | PTE_W);
+
+	// Initialize the SMP-related parts of the memory map
+	mem_init_mp();
 
 	// Initialize the SMP-related parts of the memory map
 	mem_init_mp();
