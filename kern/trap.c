@@ -399,13 +399,13 @@ page_fault_handler(struct Trapframe *tf)
 	if (curenv->env_pgfault_upcall) {
 		// page fault handler exists
 		size_t ulen = sizeof(struct UTrapframe);
-		user_mem_assert(curenv, (void*)(UXSTACKTOP - PGSIZE), PGSIZE, PTE_W);
 		struct UTrapframe* utf = (struct UTrapframe*)(UXSTACKTOP - ulen);
 		if (curenv->env_tf.tf_esp < UXSTACKTOP && curenv->env_tf.tf_esp > UXSTACKTOP - PGSIZE) {
 			// already in the exception stack
 			utf = (struct UTrapframe*)curenv->env_tf.tf_esp - ulen;
 			assert((uint32_t)utf > UXSTACKTOP - PGSIZE);
 		}
+		user_mem_assert(curenv, (void*)utf, ulen, PTE_W);
 		utf->utf_fault_va = fault_va;
 		utf->utf_err = tf->tf_err;
 		utf->utf_regs = tf->tf_regs;
@@ -414,6 +414,7 @@ page_fault_handler(struct Trapframe *tf)
 		utf->utf_esp = tf->tf_esp;
 		curenv->env_tf.tf_eip = (uintptr_t)curenv->env_pgfault_upcall;
 		curenv->env_tf.tf_esp = (uintptr_t)utf;
+		user_mem_assert(curenv, (void*)curenv->env_pgfault_upcall, 0, PTE_U);
 		env_run(curenv);
 	}
 	// Destroy the environment that caused the fault.
