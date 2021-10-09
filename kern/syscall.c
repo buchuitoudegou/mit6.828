@@ -11,6 +11,7 @@
 #include <kern/syscall.h>
 #include <kern/console.h>
 #include <kern/sched.h>
+#include <kern/time.h>
 
 static int check_perm(int perm) {
 	if (!(perm & (PTE_U | PTE_P))) {
@@ -421,6 +422,14 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf) {
 	op_env->env_tf.tf_eflags = FL_IF;
 	op_env->env_tf.tf_eflags &= ~FL_IOPL_3; // user program has no io priviledge.
 	return 0;
+}
+
+// Return the current time.
+static int
+sys_time_msec(void)
+{
+	// LAB 6: Your code here.
+	panic("sys_time_msec not implemented");
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
