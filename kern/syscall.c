@@ -410,6 +410,19 @@ sys_ipc_recv(void *dstva)
 	return 0;
 }
 
+static int
+sys_env_set_trapframe(envid_t envid, struct Trapframe *tf) {
+	struct Env* op_env;
+	int r;
+	if ((r = envid2env(envid, &op_env, 0)) < 0) {
+		return r;
+	}
+	op_env->env_tf = *tf;
+	op_env->env_tf.tf_eflags = FL_IF;
+	op_env->env_tf.tf_eflags &= ~FL_IOPL_3; // user program has no io priviledge.
+	return 0;
+}
+
 // Dispatches to the correct kernel function, passing the arguments.
 int32_t
 syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, uint32_t a5)
@@ -460,6 +473,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		}
 		case SYS_ipc_try_send: {
 			return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, (void*)a3, (unsigned int)a4);
+		}
+		case SYS_env_set_trapframe: {
+			return sys_env_set_trapframe((envid_t)a1, (struct Trapframe*)a2);
 		}
 		case NSYSCALLS:
 		default:

@@ -302,6 +302,25 @@ static int
 copy_shared_pages(envid_t child)
 {
 	// LAB 5: Your code here.
+	extern volatile pde_t uvpd[];
+	extern volatile pte_t uvpt[];
+	int r;
+	for (uint32_t cur = 0; cur != UTOP - PGSIZE; cur += PGSIZE) {
+		int offset = PGNUM(cur);
+		pte_t* pgt_entry = (pte_t*)uvpt + offset;
+		pde_t* pdt_entry = (pde_t*)uvpd + PDX(cur);
+		if (*pdt_entry && *pgt_entry) {
+			if ((*pgt_entry) & PTE_SHARE) {
+				// shared pages
+				if ((r = sys_page_map(0, (void*)(offset*PGSIZE), child, (void*)(offset*PGSIZE), PTE_SYSCALL)) < 0) {
+					panic("duppage: dup shared pages on child fails: %e.\n", r);
+				}
+				if ((r = sys_page_map(0, (void*)(offset*PGSIZE), 0, (void*)(offset*PGSIZE), PTE_SYSCALL)) < 0) {
+					panic("duppage: dup shared pages on parent fails: %e.\n", r);
+				}
+			}
+		}
+	}
 	return 0;
 }
 

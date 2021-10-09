@@ -75,14 +75,21 @@ duppage(envid_t envid, unsigned pn)
 
 	// LAB 4: Your code here.
 	// panic("duppage not implemented");
-	// cprintf("\n--------------------\nbegin dup: %x\n", pn * PGSIZE);
+	if (uvpt[PGNUM(pn*PGSIZE)] & PTE_SHARE) {
+		// shared pages: do not copy the them but map to the new process
+		if ((r = sys_page_map(0, (void*)(pn*PGSIZE), envid, (void*)(pn*PGSIZE), PTE_SYSCALL)) < 0) {
+			panic("duppage: dup shared pages on child fails: %e.\n", r);
+		}
+		if ((r = sys_page_map(0, (void*)(pn*PGSIZE), 0, (void*)(pn*PGSIZE), PTE_SYSCALL)) < 0) {
+			panic("duppage: dup shared pages on parent fails: %e.\n", r);
+		}
+		return 0;
+	}
 	r = sys_page_map(0, (void*)(pn*PGSIZE), envid, (void*)(pn*PGSIZE), PTE_COW | PTE_U | PTE_P);
 	if (r < 0) {
 		panic("duplicating page fails.\n");
 	}
-	// cprintf("set up COW: %x for child, r: %x\n", pn, &r);
 	sys_page_map(0, (void*)(pn*PGSIZE), 0, (void*)(pn*PGSIZE), PTE_COW | PTE_U | PTE_P);
-	// cprintf("dup finished\n--------------------\n");
 	return 0;
 }
 
