@@ -45,9 +45,9 @@ int e1000_trans_packet(const void* src, int len) {
       memcpy(tx_buffer_payload + payload_idx, src, len);
       tx_buffer[tail_offset].addr = PADDR((void*)(tx_buffer_payload + payload_idx));
       tx_buffer[tail_offset].length = len;
-      tx_buffer[tail_offset].cmd = (1 << 3); // set the RS bit
+      tx_buffer[tail_offset].cmd = (1 << 3) | 1; // set the RS bit and the end-of-packet bit
       tx_buffer[tail_offset].status = 0; // clear the DD bit
-      e1000_reg_space[OFFSET(E1000_TDT)] = tail_offset + 1; // inform the card
+      e1000_reg_space[OFFSET(E1000_TDT)] = (tail_offset + 1) % E1000_TX_BUFFER_LEN; // inform the card
       tail_offset = (tail_offset + 1) % E1000_TX_BUFFER_LEN;
       return 0; // successfully sent
     } else {
