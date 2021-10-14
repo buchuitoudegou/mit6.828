@@ -12,6 +12,7 @@
 #include <kern/console.h>
 #include <kern/sched.h>
 #include <kern/time.h>
+#include <kern/e1000.h>
 
 static int check_perm(int perm) {
 	if (!(perm & (PTE_U | PTE_P))) {
@@ -384,6 +385,24 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	return 0;
 }
 
+static int
+sys_send_net_packet(void* srcva, int len) {
+	int r;
+	if ((uintptr_t)srcva >= UTOP) {
+		return -E_INVAL;
+	}
+	pte_t* pgt_entry;
+	struct PageInfo* page = page_lookup(curenv->env_pgdir, srcva, &pgt_entry);
+	if (!page) {
+		// page not exists
+		return -E_INVAL;
+	}
+	if ((r = e1000_trans_packet(srcva, len)) < 0) {
+		return r;
+	}
+	return 0;
+}
+
 // Block until a value is ready.  Record that you want to receive
 // using the env_ipc_recving and env_ipc_dstva fields of struct Env,
 // mark yourself not runnable, and then give up the CPU.
@@ -429,7 +448,8 @@ static int
 sys_time_msec(void)
 {
 	// LAB 6: Your code here.
-	panic("sys_time_msec not implemented");
+	// panic("sys_time_msec not implemented");
+	return time_msec();
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -485,6 +505,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		}
 		case SYS_env_set_trapframe: {
 			return sys_env_set_trapframe((envid_t)a1, (struct Trapframe*)a2);
+		}
+		case SYS_time_msec: {
+			return sys_time_msec();
+		}
+		case SYS_send_net_packet: {
+			return sys_send_net_packet((void*)a1, (int)a2);
 		}
 		case NSYSCALLS:
 		default:

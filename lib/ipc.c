@@ -26,7 +26,7 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 	// panic("ipc_recv not implemented");
 	int r;
 	void* addr = pg? pg: (void*)UTOP;
-	if ((r = sys_ipc_recv(pg)) < 0) {
+	if ((r = sys_ipc_recv(addr)) < 0) {
 		if (from_env_store) *from_env_store = 0;
 		if (perm_store) *perm_store = 0;
 		return r;
@@ -58,7 +58,7 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 	while ((r = sys_ipc_try_send(to_env, val, addr, perm)) < 0) {
 		// try until it succeeds
 		if (r != -E_IPC_NOT_RECV) {
-			panic("sending messages fails.\n");
+			panic("sending messages fails: %e.\n", r);
 		}
 		sys_yield();
 	}
