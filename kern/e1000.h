@@ -6,13 +6,18 @@
 #define OFFSET(x) x/4
 
 #define E1000_TX_BUFFER_LEN 64
+#define E1000_RX_BUFFER_LEN 128
 #define E1000_TX_PKT_SIZE 1518
+#define E1000_RX_PKT_SIZE 1518
 
 #define E1000_RDBAL    0x02800  /* RX Descriptor Base Address Low - RW */
 #define E1000_RDBAH    0x02804  /* RX Descriptor Base Address High - RW */
 #define E1000_RDLEN    0x02808  /* RX Descriptor Length - RW */
 #define E1000_RDH      0x02810  /* RX Descriptor Head - RW */
 #define E1000_RDT      0x02818  /* RX Descriptor Tail - RW */
+#define E1000_RA       0x05400
+#define E1000_MTA      0x05200  /* Multicast Table Array - RW Array */
+#define E1000_RCTL     0x00100  /* RX Control - RW */
 
 #define E1000_TDBAL    0x03800  /* TX Descriptor Base Address Low - RW */
 #define E1000_TDBAH    0x03804  /* TX Descriptor Base Address High - RW */
@@ -73,5 +78,6 @@ struct rx_desc {
 int e1000_boot(struct pci_func *f);
 int e1000_init(void);
 int e1000_trans_packet(const void* src, int len);
+int e1000_recv_packet(void* dst, int* len);
 
 #endif  // SOL >= 6
