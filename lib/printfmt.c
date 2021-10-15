@@ -35,7 +35,8 @@ static const char * const error_string[MAXERROR] =
 	[E_FILE_EXISTS]	= "file already exists",
 	[E_NOT_EXEC]	= "file is not a valid executable",
 	[E_NOT_SUPP]	= "operation not supported",
-	[E_BUF_FULL] = "buffer full"
+	[E_BUF_FULL] = "buffer full",
+	[E_BUF_EMPTY] = "buffer empty" 
 };
 
 /*

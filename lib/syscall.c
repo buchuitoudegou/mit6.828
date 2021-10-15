@@ -126,3 +126,7 @@ sys_time_msec(void)
 int sys_send_net_packet(void* srcva, int len) {
 	return syscall(SYS_send_net_packet, 0, (uint32_t)srcva, (uint32_t)len, 0, 0, 0);
 }
+
+int sys_recv_net_packet(void* dstva, int* len) {
+	return syscall(SYS_recv_net_packet, 0, (uint32_t)dstva, (uint32_t)len, 0, 0, 0);
+}

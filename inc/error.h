@@ -28,6 +28,7 @@ enum {
 
 	// network error code
 	E_BUF_FULL, // Buffer is currently full
+	E_BUF_EMPTY, // Buffer is empty
 	MAXERROR
 };
 

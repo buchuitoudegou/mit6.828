@@ -420,14 +420,26 @@ sys_ipc_recv(void *dstva)
 	// LAB 4: Your code here.
 	// panic("sys_ipc_recv not implemented");
 	if ((uintptr_t)dstva < UTOP) {
+		if ((uintptr_t)dstva % PGSIZE != 0) {
+			// dst < UTOP and not page-aligned
+			return -E_INVAL;
+		}
 		curenv->env_ipc_dstva = dstva;
-	} else {
-		return -E_INVAL;
 	}
 	curenv->env_ipc_recving = 1; // receiving data
 	curenv->env_status = ENV_NOT_RUNNABLE; // blocking
 	sched_yield(); // no return
 	return 0;
+}
+
+static int
+sys_recv_net_packet(void* dst, int* len) {
+	int r;
+	if ((uintptr_t)dst >= UTOP) {
+		// invalid address
+		return -E_INVAL;
+	}
+	return e1000_recv_packet(dst, len);
 }
 
 static int
@@ -511,6 +523,9 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		}
 		case SYS_send_net_packet: {
 			return sys_send_net_packet((void*)a1, (int)a2);
+		}
+		case SYS_recv_net_packet: {
+			return sys_recv_net_packet((void*)a1, (int*)a2);
 		}
 		case NSYSCALLS:
 		default:
